@@ -1,5 +1,25 @@
 #+TITLE: Emacs Operating System
 #+AUTHOR: Neptune
+* Ideas
+
+Really dig into my core use cases and upgrade tooling for each
+- dev work
+  - python
+  - js/ts
+  - racket
+  - clojure
+  - rust
+- org mode
+- writing for D&D
+- reading pdfs and taking notes
+
+ideally:
+- ado ticket management
+- file management
+- terminal usage (eshell fails on some things)
+- environment management (particularly python env mgmt)
+- email management
+- calendar management
 
 * Package Management
 
@@ -332,6 +352,8 @@ idea: can we add a nice startup screen?
 * Key Bindings
 
 #+BEGIN_SRC emacs-lisp
+(use-package multiple-cursors)
+
 (use-package general
   :config
   (general-define-key
@@ -366,6 +388,14 @@ idea: can we add a nice startup screen?
 * UI
 
 #+BEGIN_SRC emacs-lisp
+(use-package doom-themes
+  :init
+  (load-theme 'doom-dracula t))
+
+(use-package spacious-padding
+  :config
+  (spacious-padding-mode 1))
+
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -430,6 +460,10 @@ idea: can we add a nice startup screen?
   :config
   ;; Enable in all Eshell buffers
   (eshell-syntax-highlighting-global-mode))
+
+(use-package simple-httpd
+  :init
+  (setq httpd-port 8000))
 #+END_SRC
 
 * yasnippet
@@ -466,22 +500,23 @@ idea: can we add a nice startup screen?
 
 #+BEGIN_SRC emacs-lisp
 (use-package racket-mode
-   :hook ((racket-mode . racket-xp-mode)
-     (racket-mode . corfu-mode)))
-
+  :hook
+  ((racket-mode . racket-xp-mode)
+   (racket-mode . corfu-mode))
+  :config
   (defun custom-racket-send-definition ()
     (interactive)
     (if (use-region-p)
         (let ((start (region-beginning))
-              (end (region-end)))
+              (end   (region-end)))
           (racket-send-region start end)
-    (goto-char end)
+          (goto-char end)
           (deactivate-mark))
-      (let ((start (point))
-            (end (progn
-                   (ignore-errors (backward-up-list))
-                   (forward-sexp)
-                   (point))))
+      (let* ((start (point))
+             (end   (progn
+                      (ignore-errors (backward-up-list))
+                      (forward-sexp)
+                      (point))))
         (when (and start end (<= start end))
           (goto-char start)
           (racket-send-definition))
@@ -489,14 +524,17 @@ idea: can we add a nice startup screen?
             (newline-and-indent)
           (goto-char end)))))
 
+  ;; Define custom keybindings in racket-mode, xp-mode, and repl-mode
   (general-define-key
    :keymaps '(racket-mode-map racket-xp-mode-map racket-repl-mode-map)
+   ;; Evaluate current definition/region
    "C-c C-c" 'custom-racket-send-definition
+   ;; Open the Racket REPL
    "C-c C-p" 'racket-repl
-   "C-x C-l" "λ"
-   "C-c d" 'racket-xp-documentation
+   ;; Insert λ symbol
    "C-c C-l" "λ"
-   "C-c C-g" 'deadgrep)
+   ;; Show documentation
+   "C-c d"   'racket-xp-documentation))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
