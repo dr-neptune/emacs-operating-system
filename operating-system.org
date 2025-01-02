@@ -390,7 +390,8 @@ idea: can we add a nice startup screen?
   :config
   (general-define-key
    ;; Window / buffer manipulation
-   "C-x p"   'prev-window
+   "C-x o"   'next-multiframe-window
+   "C-x p"   'previous-multiframe-window
    "C-x C-o" 'crux-transpose-windows
    "C-r"     'hydra-buffers/body
 
