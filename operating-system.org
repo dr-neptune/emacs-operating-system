@@ -44,114 +44,147 @@ ideally:
 (require 'use-package)
 #+END_SRC
 
+* Global State
+
+This state is for adding file paths that are relevant when I'm on a
+windows machine.
+
+#+BEGIN_SRC emacs-lisp
+(defmacro my/define-os-state (states)
+  "Define OS-specific variables from a list of (VAR WINDOWS-VALUE DEFAULT-VALUE).
+On Windows, each VAR is set to WINDOWS-VALUE; on non-Windows, each VAR is set
+to DEFAULT-VALUE."
+  `(progn
+     ,@(mapcar
+        (lambda (entry)
+          (let ((var (nth 0 entry))
+                (win-val (nth 1 entry))
+                (default (nth 2 entry)))
+            `(progn
+               (defvar ,var ,default ,(format "OS-specific variable %s." (symbol-name var)))
+               (when (eq system-type 'windows-nt)
+                 (setq ,var ,win-val)))))
+        states)))
+
+;; Usage: define your OS-specific variables in one place
+(my/define-os-state
+ ((my/copilot-path       ".emacs.d/copilot.el" nil)
+  (my/python-venv-path   ".venv/" nil)
+  (my/adoel-path         "code/adoel/")))
+#+END_SRC
+
 
 * Global Settings
 
 #+BEGIN_SRC emacs-lisp
-(use-package emacs
-  :init
-  ;; Make the *scratch* buffer use Org mode by default
-  (setq initial-major-mode 'org-mode
-        initial-scratch-message "#+title: Scratch\n\n")
+  (use-package emacs
+    :init
+    ;; Make the *scratch* buffer use Org mode by default
+    (setq initial-major-mode 'org-mode
+	  initial-scratch-message "#+title: Scratch\n\n")
 
-  ;; Show the time in the mode line
-  (display-time)
+    ;; Show the time in the mode line
+    (display-time)
 
-  ;; Remove clutter from the UI
-  (tool-bar-mode -1)
-  (blink-cursor-mode 0)
-  (when (fboundp 'scroll-bar-mode)
-    (scroll-bar-mode -1))
+    ;; Remove clutter from the UI
+    (tool-bar-mode -1)
+    (blink-cursor-mode 0)
+    (when (fboundp 'scroll-bar-mode)
+      (scroll-bar-mode -1))
 
-  ;; Tells use-package to auto-install packages, if needed
-  (setq use-package-always-ensure t)
+    ;; Tells use-package to auto-install packages, if needed
+    (setq use-package-always-ensure t)
 
-  ;; Safe to load all themes (or replace with specific checks)
-  (setq custom-safe-themes t)
+    ;; Safe to load all themes (or replace with specific checks)
+    (setq custom-safe-themes t)
 
-  ;; UI / Behavior
-  (setq inhibit-startup-message t
-        ring-bell-function 'ignore
-        completion-cycle-threshold 3  ;; TAB cycles when only few candidates
-        tab-always-indent 'complete)  ;; Indent + complete on TAB
+    ;; UI / Behavior
+    (setq inhibit-startup-message t
+	  ring-bell-function 'ignore
+	  completion-cycle-threshold 3  ;; TAB cycles when only few candidates
+	  tab-always-indent 'complete)  ;; Indent + complete on TAB
 
-  ;; Dired display
-  (setq dired-listing-switches "-1")
+    ;; Dired display
+    (setq dired-listing-switches "-1")
 
-  ;; If on macOS or X-based system, inherit env vars from the user shell
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
+    ;; If on macOS or X-based system, inherit env vars from the user shell
+    (when (memq window-system '(mac ns x))
+      (exec-path-from-shell-initialize))
 
-  ;; Keep backup files (~) all in one place
-  (setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
-        backup-by-copying t         ; Don’t clobber symlinks
-        version-control t           ; Use version numbers for backups
-        delete-old-versions t
-        kept-new-versions 6
-        kept-old-versions 2)
+    ;; Keep backup files (~) all in one place
+    (setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
+	  backup-by-copying t         ; Don’t clobber symlinks
+	  version-control t           ; Use version numbers for backups
+	  delete-old-versions t
+	  kept-new-versions 6
+	  kept-old-versions 2)
 
-  ;; Pair parentheses and quotes automatically
-  (electric-pair-mode 1)
+    ;; Pair parentheses and quotes automatically
+    (electric-pair-mode 1)
 
-  ;; Highlight matching parentheses
-  (show-paren-mode 1)
+    ;; Highlight matching parentheses
+    (show-paren-mode 1)
 
-  ;; Automatically delete trailing whitespace before save
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    ;; Automatically delete trailing whitespace before save
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-  ;; Enable auto-fill in text modes
-  (add-hook 'text-mode-hook 'turn-on-auto-fill)
+    ;; Enable auto-fill in text modes
+    (add-hook 'text-mode-hook 'turn-on-auto-fill)
 
-  ;; Autosave files: store them in a dedicated folder if you like
-  (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+    ;; Autosave files: store them in a dedicated folder if you like
+    (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 
-  :config
-  ;; Turn off the menu bar (you could also do tool-bar-mode -1, scroll-bar-mode -1, etc.)
-  (menu-bar-mode -1)
+    :config
+    ;; Turn off the menu bar (you could also do tool-bar-mode -1, scroll-bar-mode -1, etc.)
+    (menu-bar-mode -1)
 
-  ;; Make “yes or no?” prompts into “y or n”
-  (if (boundp 'use-short-answers)
-      (setq use-short-answers t)
-    (advice-add 'yes-or-no-p :override #'y-or-n-p))
+    ;; Make “yes or no?” prompts into “y or n”
+    (if (boundp 'use-short-answers)
+	(setq use-short-answers t)
+      (advice-add 'yes-or-no-p :override #'y-or-n-p))
 
-  ;; Set default font
-  (set-face-attribute 'default nil :font "JetBrainsMono")
+    ;; Set default font
+    ;; download from https://www.jetbrains.com/lp/mono/
+    '(default-frame-alist
+      '((fullscreen . fullscreen)
+	(font . "JetBrains Mono-14")
+	(line-spacing . 0.2)))
 
-  ;; Enable ligatures
-  (dolist (char/ligature-re
-	   `((?-  . ,(rx (or (or "-->" "-<<" "->>" "-|" "-~" "-<" "->") (+ "-"))))
-	     (?/  . ,(rx (or (or "/==" "/=" "/>" "/**" "/*") (+ "/"))))
-	     (?*  . ,(rx (or (or "*>" "*/") (+ "*"))))
-	     (?<  . ,(rx (or (or "<<=" "<<-" "<|||" "<==>" "<!--" "<=>" "<||" "<|>" "<-<"
-				 "<==" "<=<" "<-|" "<~>" "<=|" "<~~" "<$>" "<+>" "</>"
-				 "<*>" "<->" "<=" "<|" "<:" "<>"  "<$" "<-" "<~" "<+"
-				 "</" "<*")
-			     (+ "<"))))
-	     (?:  . ,(rx (or (or ":?>" "::=" ":>" ":<" ":?" ":=") (+ ":"))))
-	     (?=  . ,(rx (or (or "=>>" "==>" "=/=" "=!=" "=>" "=:=") (+ "="))))
-	     (?!  . ,(rx (or (or "!==" "!=") (+ "!"))))
-	     (?>  . ,(rx (or (or ">>-" ">>=" ">=>" ">]" ">:" ">-" ">=") (+ ">"))))
-	     (?&  . ,(rx (+ "&")))
-	     (?|  . ,(rx (or (or "|->" "|||>" "||>" "|=>" "||-" "||=" "|-" "|>"
-				 "|]" "|}" "|=")
-			     (+ "|"))))
-	     (?.  . ,(rx (or (or ".?" ".=" ".-" "..<") (+ "."))))
-	     (?+  . ,(rx (or "+>" (+ "+"))))
-	     (?\[ . ,(rx (or "[<" "[|")))
-	     (?\{ . ,(rx "{|"))
-	     (?\? . ,(rx (or (or "?." "?=" "?:") (+ "?"))))
-	     (?#  . ,(rx (or (or "#_(" "#[" "#{" "#=" "#!" "#:" "#_" "#?" "#(")
-			     (+ "#"))))
-	     (?\; . ,(rx (+ ";")))
-	     (?_  . ,(rx (or "_|_" "__")))
-	     (?~  . ,(rx (or "~~>" "~~" "~>" "~-" "~@")))
-	     (?$  . ,(rx "$>"))
-	     (?^  . ,(rx "^="))
-	     (?\] . ,(rx "]#"))))
-    (let ((char (car char/ligature-re))
-	  (ligature-re (cdr char/ligature-re)))
-      (set-char-table-range composition-function-table char
-			    `([,ligature-re 0 font-shape-gstring])))))
+    ;; Enable ligatures
+    (dolist (char/ligature-re
+	     `((?-  . ,(rx (or (or "-->" "-<<" "->>" "-|" "-~" "-<" "->") (+ "-"))))
+	       (?/  . ,(rx (or (or "/==" "/=" "/>" "/**" "/*") (+ "/"))))
+	       (?*  . ,(rx (or (or "*>" "*/") (+ "*"))))
+	       (?<  . ,(rx (or (or "<<=" "<<-" "<|||" "<==>" "<!--" "<=>" "<||" "<|>" "<-<"
+				   "<==" "<=<" "<-|" "<~>" "<=|" "<~~" "<$>" "<+>" "</>"
+				   "<*>" "<->" "<=" "<|" "<:" "<>"  "<$" "<-" "<~" "<+"
+				   "</" "<*")
+			       (+ "<"))))
+	       (?:  . ,(rx (or (or ":?>" "::=" ":>" ":<" ":?" ":=") (+ ":"))))
+	       (?=  . ,(rx (or (or "=>>" "==>" "=/=" "=!=" "=>" "=:=") (+ "="))))
+	       (?!  . ,(rx (or (or "!==" "!=") (+ "!"))))
+	       (?>  . ,(rx (or (or ">>-" ">>=" ">=>" ">]" ">:" ">-" ">=") (+ ">"))))
+	       (?&  . ,(rx (+ "&")))
+	       (?|  . ,(rx (or (or "|->" "|||>" "||>" "|=>" "||-" "||=" "|-" "|>"
+				   "|]" "|}" "|=")
+			       (+ "|"))))
+	       (?.  . ,(rx (or (or ".?" ".=" ".-" "..<") (+ "."))))
+	       (?+  . ,(rx (or "+>" (+ "+"))))
+	       (?\[ . ,(rx (or "[<" "[|")))
+	       (?\{ . ,(rx "{|"))
+	       (?\? . ,(rx (or (or "?." "?=" "?:") (+ "?"))))
+	       (?#  . ,(rx (or (or "#_(" "#[" "#{" "#=" "#!" "#:" "#_" "#?" "#(")
+			       (+ "#"))))
+	       (?\; . ,(rx (+ ";")))
+	       (?_  . ,(rx (or "_|_" "__")))
+	       (?~  . ,(rx (or "~~>" "~~" "~>" "~-" "~@")))
+	       (?$  . ,(rx "$>"))
+	       (?^  . ,(rx "^="))
+	       (?\] . ,(rx "]#"))))
+      (let ((char (car char/ligature-re))
+	    (ligature-re (cdr char/ligature-re)))
+	(set-char-table-range composition-function-table char
+			      `([,ligature-re 0 font-shape-gstring])))))
 #+END_SRC
 
 idea: can we add a nice startup screen?
@@ -186,7 +219,6 @@ idea: can we add a nice startup screen?
 #+END_SRC
 
 * Org
-
 #+BEGIN_SRC emacs-lisp
 (use-package org
   :bind (:map org-mode-map
@@ -384,7 +416,6 @@ idea: can we add a nice startup screen?
     ("<down>"  shrink-window              "smaller")))
 #+END_SRC
 
-
 * UI
 
 #+BEGIN_SRC emacs-lisp
@@ -412,7 +443,6 @@ idea: can we add a nice startup screen?
   :init
   (doom-modeline-mode 1))
 #+END_SRC
-
 
 * Git
 
@@ -496,7 +526,43 @@ idea: can we add a nice startup screen?
 (pdf-tools-install)
 #+END_SRC
 
-* Racket
+* General Programming
+
+#+BEGIN_SRC emacs-lisp
+(use-package treesit-auto
+  :config
+  (global-treesit-auto-mode))
+
+(use-package projectile
+  :bind (:map projectile-mode-map
+              ("C-c p" . projectile-command-map))
+  :custom
+  (projectile-completion-system 'auto)
+  :config
+  (projectile-mode +1))
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :config)
+
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :hook (lsp-mode . lsp-ui-mode))
+#+END_SRC
+
+* Copilot
+
+#+BEGIN_SRC emacs-lisp
+(use-package copilot
+  :if (and (boundp 'my/copilot-path) my/copilot-path)
+  :load-path my/copilot-path
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+         ("<tab>" . copilot-accept-completion)
+         ("TAB"   . copilot-accept-completion)))
+#+END_SRC
+
+* COMMENT Racket
 
 #+BEGIN_SRC emacs-lisp
 (use-package racket-mode
@@ -537,7 +603,7 @@ idea: can we add a nice startup screen?
    "C-c d"   'racket-xp-documentation))
 #+END_SRC
 
-* Clojure
+* COMMENT Clojure
 
 #+BEGIN_SRC emacs-lisp
 (use-package clojure-mode
@@ -587,10 +653,88 @@ idea: can we add a nice startup screen?
 
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 
+* Python
+
+#+BEGIN_SRC emacs-lisp
+(when (eq system-type 'windows-nt)
+  (pyvenv-activate my/python-venv-path))
+
+(use-package python-mode
+  :custom
+  (python-shell-interpreter "ipython")
+  :hook
+  (python-ts-mode . lsp-deferred))
+
+;; python-x provides additional convenience functions/macros for Python
+(use-package python-x
+  :after python-mode)
+
+;; Elpy: Python IDE features (autocompletion, debugging, etc.)
+(use-package elpy
+  :init
+  (elpy-enable))
+
+;; Custom function to send either the region or the statement to the Elpy shell
+(defun my-elpy-send ()
+  "Send the active region or current statement to the Elpy shell and advance."
+  (interactive)
+  (if (region-active-p)
+      (elpy-shell-send-region-or-buffer-and-step)
+    (elpy-shell-send-statement-and-step)))
+
+;; Keybindings for Python buffers and Elpy
+(use-package general
+  :config
+  (general-define-key
+   :keymaps '(python-mode-map python-ts-mode-map elpy-mode-map)
+   ;; Evaluate code
+   "C-c C-c"      'my-elpy-send
+   "C-S-c C-c"    'my-elpy-send
+   ;; Switch to the Elpy shell
+   "C-c C-p"      'elpy-shell-switch-to-shell
+   "C-c p"        'elpy-shell-switch-to-shell
+   ;; LSP UI helpers
+   "C-c d"        'lsp-ui-doc-glance
+   "C-c f"        'lsp-ui-peek-find-definitions
+   ;; Search with deadgrep
+   "C-c C-g"      'deadgrep
+   ;; Quick replace
+   "C-c '"        'replace-regexp
+   ;; Kill word backwards
+   "C-<backspace>" 'backward-kill-word))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
+* Web & TypeScript
 
+#+BEGIN_SRC emacs-lisp
+(use-package js
+  :ensure nil  ;; Built-in
+  :mode ("\\.js\\'" . js-ts-mode)
+  :hook (js-ts-mode . lsp-deferred)
+  :config
+  (setq js-ts-mode-indent-offset 2))
+
+(use-package typescript-ts-mode
+  :ensure nil  ;; Built-in in Emacs 29+
+  :mode (("\\.ts\\'" . typescript-ts-mode)
+         ("\\.tsx\\'" . tsx-ts-mode))
+  :hook ((typescript-ts-mode . lsp-deferred)
+         (tsx-ts-mode        . lsp-deferred))
+  :config
+  (setq typescript-ts-mode-indent-offset 2))
+
+(use-package css-ts-mode
+  :ensure nil  ;; Built-in in Emacs 29+
+  :mode ("\\.css\\'" . css-ts-mode)
+  :hook (css-ts-mode . lsp-deferred)
+  :config
+  (setq css-ts-mode-indent-offset 2))
+
+(use-package html-mode
+  :ensure nil  ;; Built-in
+  :mode ("\\.html?\\'" . html-ts-mode)
+  :hook (html-ts-mode . lsp-deferred)
+  :config
+  (setq html-ts-mode-indent-offset 2))
 #+END_SRC
