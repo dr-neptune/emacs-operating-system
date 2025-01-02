@@ -494,7 +494,7 @@ idea: can we add a nice startup screen?
    "C-c C-c" 'custom-racket-send-definition
    "C-c C-p" 'racket-repl
    "C-x C-l" "λ"
-   "C-c =" 'racket-xp-documentation
+   "C-c d" 'racket-xp-documentation
    "C-c C-l" "λ"
    "C-c C-g" 'deadgrep)
 #+END_SRC
