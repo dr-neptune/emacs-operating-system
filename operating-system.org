@@ -383,8 +383,120 @@ idea: can we add a nice startup screen?
   (doom-modeline-mode 1))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 
+* Git
+
+#+BEGIN_SRC emacs-lisp
+(use-package magit)
+#+END_SRC
+
+* Eshell
+
+#+BEGIN_SRC emacs-lisp
+(defun efs/configure-eshell ()
+  ;; Save command history when commands are entered
+  (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
+
+  ;; Truncate buffer for performance
+  (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
+
+  (setq eshell-history-size         100
+        eshell-buffer-maximum-lines 100
+        eshell-hist-ignoredups      t
+        eshell-scroll-to-bottom-on-input t))
+
+(use-package eshell-git-prompt)
+
+(use-package eshell
+  :hook (eshell-first-time-mode . efs/configure-eshell)
+  :config
+  ;; When the subshell process dies, kill the eshell buffer
+  (with-eval-after-load 'esh-opt
+    (setq eshell-destroy-buffer-when-process-dies t)
+    (setq eshell-visual-commands '("htop" "zsh" "vim")))
+
+  ;; Use the powerline theme from eshell-git-prompt
+  (eshell-git-prompt-use-theme 'powerline)
+
+  ;; Function to open a new Eshell buffer with a unique name
+  (defun my/eshell-new ()
+    "Open a new instance of Eshell in a uniquely named buffer."
+    (interactive)
+    (let ((eshell-buffer-name (generate-new-buffer-name "*eshell*")))
+      (eshell t))))
+
+(use-package eshell-syntax-highlighting
+  :after esh-mode
+  :config
+  ;; Enable in all Eshell buffers
+  (eshell-syntax-highlighting-global-mode))
+#+END_SRC
+
+* yasnippet
+
+#+BEGIN_SRC emacs-lisp
+(use-package yasnippet
+  :bind
+  ("<backtab>" . yas-expand)
+  :config
+  (let ((local-snippets-dir
+         (expand-file-name "snippets"
+                           (file-name-directory
+                            (or load-file-name (buffer-file-name))))))
+    (unless (file-exists-p local-snippets-dir)
+      (make-directory local-snippets-dir t))
+    (add-to-list 'yas-snippet-dirs local-snippets-dir))
+
+  (yas-reload-all)
+  (yas-global-mode 1))
+
+(use-package consult-yasnippet)
+(use-package yasnippet-snippets)
+#+END_SRC
+
+* PDFs
+
+#+BEGIN_SRC emacs-lisp
+(use-package pdf-tools)
+
+(pdf-tools-install)
+#+END_SRC
+
+* Racket
+
+#+BEGIN_SRC emacs-lisp
+(use-package racket-mode
+   :hook ((racket-mode . racket-xp-mode)
+     (racket-mode . corfu-mode)))
+
+  (defun custom-racket-send-definition ()
+    (interactive)
+    (if (use-region-p)
+        (let ((start (region-beginning))
+              (end (region-end)))
+          (racket-send-region start end)
+    (goto-char end)
+          (deactivate-mark))
+      (let ((start (point))
+            (end (progn
+                   (ignore-errors (backward-up-list))
+                   (forward-sexp)
+                   (point))))
+        (when (and start end (<= start end))
+          (goto-char start)
+          (racket-send-definition))
+        (if (= start end)
+            (newline-and-indent)
+          (goto-char end)))))
+
+  (general-define-key
+   :keymaps '(racket-mode-map racket-xp-mode-map racket-repl-mode-map)
+   "C-c C-c" 'custom-racket-send-definition
+   "C-c C-p" 'racket-repl
+   "C-x C-l" "λ"
+   "C-c =" 'racket-xp-documentation
+   "C-c C-l" "λ"
+   "C-c C-g" 'deadgrep)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
