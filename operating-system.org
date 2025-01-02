@@ -537,6 +537,56 @@ idea: can we add a nice startup screen?
    "C-c d"   'racket-xp-documentation))
 #+END_SRC
 
+* Clojure
+
+#+BEGIN_SRC emacs-lisp
+(use-package clojure-mode
+  :mode (("\\.clj\\'"  . clojure-mode)
+         ("\\.cljs\\'" . clojure-mode)
+         ("\\.cljc\\'" . clojure-mode)
+         ("\\.edn\\'"  . clojure-mode))
+  :config
+  ;; Highlight debugging annotations and extra font lock inside comment forms
+  (setq clojure-toplevel-inside-comment-form t))
+
+(use-package cider
+  :hook (clojure-mode . cider-mode)
+  :config
+  (setq nrepl-log-messages t
+        cider-repl-history-file "~/.emacs.d/cider-repl-history"
+        cider-repl-history-size 100
+        cider-repl-popup-stacktraces t
+        cider-repl-display-help-banner nil
+        cider-font-lock-dynamically '(core deprecated macro namespace))
+  ;; Also enable Eldoc in CIDER REPL buffers
+  (add-hook 'cider-repl-mode-hook #'eldoc-mode))
+
+(use-package clj-refactor
+  :after clojure-mode
+  :hook (clojure-mode . clj-refactor-mode)
+  :config
+  ;; Add all refactor bindings (prefix is "C-c C-m" by default)
+  (cljr-add-keybindings-with-prefix "C-c C-m"))
+
+(use-package flycheck
+  :hook ((clojure-mode . flycheck-mode)
+         (cider-repl-mode . flycheck-mode))
+  :config
+  (use-package flycheck-clj-kondo
+    :ensure t
+    :after flycheck))
+
+(use-package eldoc
+  :hook ((clojure-mode . eldoc-mode)
+         (cider-repl-mode . eldoc-mode)))
+#+END_SRC
+
+* Rust
+
+#+BEGIN_SRC emacs-lisp
+
+#+END_SRC
+
 #+BEGIN_SRC emacs-lisp
 
 #+END_SRC
