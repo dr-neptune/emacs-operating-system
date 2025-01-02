@@ -145,10 +145,7 @@ to DEFAULT-VALUE."
 
     ;; Set default font
     ;; download from https://www.jetbrains.com/lp/mono/
-    '(default-frame-alist
-      '((fullscreen . fullscreen)
-	(font . "JetBrains Mono-14")
-	(line-spacing . 0.2)))
+    (custom-set-faces '(default ((t (:family "JetBrains Mono" :foundry "outline" :slant normal :weight regular :height 98 :width normal)))))
 
     ;; Enable ligatures
     (dolist (char/ligature-re
