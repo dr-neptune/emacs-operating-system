@@ -239,10 +239,10 @@ idea: can we add a nice startup screen?
   ;; Custom fold symbols, etc.
   (setq org-modern-fold-stars
         '(("▶" . "▼")
-          ("▷" . "▽")
-          ("▷" . "▽")
-          ("▹" . "▿")
-          ("▸" . "▾"))))
+          ("  ▷" . "  ▽")
+          ("    ▷" . "    ▽")
+          ("      ▹" . "      ▿")
+          ("      ▸" . "      ▾"))))
 
 (use-package org-download
   :after org)
