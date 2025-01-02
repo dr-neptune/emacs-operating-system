@@ -738,3 +738,21 @@ idea: can we add a nice startup screen?
   :config
   (setq html-ts-mode-indent-offset 2))
 #+END_SRC
+
+* ado.el
+
+See https://github.com/dr-neptune/ado.el
+
+#+BEGIN_SRC emacs-lisp
+(use-package azure-devops
+  :if (and (boundp 'my/adoel-path) my/adoel-path)
+  :load-path my/adoel-path
+  :init
+  ;; Provide empty (or real) values for your DevOps variables.
+  (setq azure-devops-username           ""
+        azure-devops-organization-url   ""
+        azure-devops-project-name       ""
+        azure-devops-pat                "")
+  :bind
+  ("C-c d" . azure-devops-menu))
+#+END_SRC
