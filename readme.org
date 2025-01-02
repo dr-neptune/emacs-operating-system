@@ -1,0 +1,11 @@
+#+TITLE: Emacs Operating System
+#+AUTHOR: Neptune
+
+* Emacs Operating System :rocket:
+
+Welcome to the **Emacs Operating System**! :penguin:
+
+This repository holds my personal Emacs configuration and any small
+Emacs Lisp tools I write. My goal is to craft a cohesive, portable,
+and minimal Emacs “OS” that I can share across multiple machines and
+operating systems. Feel free to explore and adapt.
