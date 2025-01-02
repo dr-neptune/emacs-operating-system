@@ -1,9 +1,5 @@
-#+TITLE: Emacs Operating System
+#+TITLE: Emacs Operating System 🚀
 #+AUTHOR: Neptune
-
-* Emacs Operating System 🚀
-
-Welcome to the *Emacs Operating System* 🐧
 
 This repository holds my personal Emacs configuration and any small
 Emacs Lisp tools I write. My goal is to craft a cohesive, portable,
