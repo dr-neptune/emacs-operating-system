@@ -14,10 +14,10 @@ Really dig into my core use cases and upgrade tooling for each
 - reading pdfs and taking notes
 
 ideally:
-- ado ticket management
 - file management
 - terminal usage (eshell fails on some things)
 - environment management (particularly python env mgmt)
+  - update: uv mode seems to be what I'm looking for
 - email management
 - calendar management
 
@@ -69,8 +69,7 @@ to DEFAULT-VALUE."
 ;; Usage: define your OS-specific variables in one place
 (my/define-os-state
  ((my/copilot-path       ".emacs.d/copilot.el" nil)
-  (my/python-venv-path   ".venv/" nil)
-  (my/adoel-path         "code/adoel/")))
+  (my/adoel-path         "code/adoel/" nil)))
 #+END_SRC
 
 
@@ -546,6 +545,9 @@ idea: can we add a nice startup screen?
 (use-package lsp-ui
   :commands lsp-ui-mode
   :hook (lsp-mode . lsp-ui-mode))
+
+;; debugger 
+(use-package dape)
 #+END_SRC
 
 * Copilot
@@ -655,8 +657,8 @@ idea: can we add a nice startup screen?
 * Python
 
 #+BEGIN_SRC emacs-lisp
-(when (eq system-type 'windows-nt)
-  (pyvenv-activate my/python-venv-path))
+(use-package uv-mode
+  :hook ((python-mode python-ts-mode) . uv-mode-auto-activate-hook))
 
 (use-package python-mode
   :custom
