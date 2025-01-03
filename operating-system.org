@@ -69,6 +69,7 @@ to DEFAULT-VALUE."
 ;; Usage: define your OS-specific variables in one place
 (my/define-os-state
  ((my/copilot-path       ".emacs.d/copilot.el" nil)
+  (my/copycat-path       "~/.emacs.d/copycat/" nil)
   (my/adoel-path         "code/adoel/" nil)))
 #+END_SRC
 
@@ -783,4 +784,20 @@ See https://github.com/dr-neptune/ado.el
         azure-devops-pat                "")
   :bind
   ("C-c d" . azure-devops-menu))
+#+END_SRC
+
+* Copycat
+
+See https://github.com/dr-neptune/copycat
+
+#+BEGIN_SRC emacs-lisp
+(use-package copycat
+  :if (and (boundp 'my/copycat-path) my/copycat-path)
+  :load-path my/copycat-path
+  :commands (copycat copycat-copy-marked)
+  :bind (("C-c c" . copycat)               ;; Open Dired with filtered files
+         ("C-c m" . copycat-copy-marked))  ;; Copy marked files into Org buffer
+  :config
+  ;; Example: show absolute paths in the Org buffer
+  (setq copycat-use-absolute-paths t))
 #+END_SRC
