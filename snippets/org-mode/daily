@@ -1,1 +1,19 @@
-placeholder for now
+# -*- mode: snippet -*-
+# name: Daily Org Template
+# key: daily
+# group: org
+# --
+** `(format-time-string "%Y-%m-%d")`
+*** planning
+**** Dev Standup
+Yesterday
+- $0
+
+Today
+-
+
+Blockers
+- None
+
+**** Review Projects in Flight & Vplan
+*** meetings
