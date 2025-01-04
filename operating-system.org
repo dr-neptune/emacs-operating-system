@@ -692,6 +692,7 @@ idea: can we add a nice startup screen?
 (use-package python-mode
   :custom
   (python-shell-interpreter "ipython")
+  (python-shell-interpreter-args "-i --simple-prompt")
   :hook
   (python-ts-mode . lsp-deferred))
 
