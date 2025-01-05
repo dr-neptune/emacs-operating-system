@@ -15,11 +15,19 @@ Really dig into my core use cases and upgrade tooling for each
 
 ideally:
 - file management
+  - started with advanced dired section. Will try it out for a bit
 - terminal usage (eshell fails on some things)
 - environment management (particularly python env mgmt)
   - update: uv mode seems to be what I'm looking for
+  - update: this might need more work on windows. Seems to work great
+    on linux.
 - email management
 - calendar management
+
+- add
+  - no littering
+  - which-key and casual
+  -
 
 * Package Management
 
@@ -47,32 +55,19 @@ ideally:
 * Global State
 
 This state is for adding file paths that are relevant when I'm on a
-windows machine.
+windows machine or any other system, but we'll define them here
+without any OS-specific logic.
 
 #+BEGIN_SRC emacs-lisp
-(defmacro my/define-os-state (states)
-  "Define OS-specific variables from a list of (VAR WINDOWS-VALUE DEFAULT-VALUE).
-On Windows, each VAR is set to WINDOWS-VALUE; on non-Windows, each VAR is set
-to DEFAULT-VALUE."
-  `(progn
-     ,@(mapcar
-        (lambda (entry)
-          (let ((var (nth 0 entry))
-                (win-val (nth 1 entry))
-                (default (nth 2 entry)))
-            `(progn
-               (defvar ,var ,default ,(format "OS-specific variable %s." (symbol-name var)))
-               (when (eq system-type 'windows-nt)
-                 (setq ,var ,win-val)))))
-        states)))
+(defvar my/copilot-path nil
+  "Path to the Copilot package or directory (if installed).")
 
-;; Usage: define your OS-specific variables in one place
-(my/define-os-state
- ((my/copilot-path       ".emacs.d/copilot.el" nil)
-  (my/copycat-path       "~/.emacs.d/copycat/" nil)
-  (my/adoel-path         "code/adoel/" nil)))
+(defvar my/copycat-path "~/.emacs.d/copycat/"
+  "Path to the Copycat package or directory (if installed).")
+
+(defvar my/adoel-path nil
+  "Path to the ADO EL (azure-devops) package or directory (if installed).")
 #+END_SRC
-
 
 * Global Settings
 
@@ -104,20 +99,17 @@ to DEFAULT-VALUE."
 	  completion-cycle-threshold 3  ;; TAB cycles when only few candidates
 	  tab-always-indent 'complete)  ;; Indent + complete on TAB
 
-    ;; Dired display
-    (setq dired-listing-switches "-1")
-
     ;; If on macOS or X-based system, inherit env vars from the user shell
     (when (memq window-system '(mac ns x))
       (exec-path-from-shell-initialize))
 
-    ;; Keep backup files (~) all in one place
-    (setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
-	  backup-by-copying t         ; Don’t clobber symlinks
-	  version-control t           ; Use version numbers for backups
-	  delete-old-versions t
-	  kept-new-versions 6
-	  kept-old-versions 2)
+    ;; ;; Keep backup files (~) all in one place
+    ;; (setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
+    ;; 	  backup-by-copying t         ; Don’t clobber symlinks
+    ;; 	  version-control t           ; Use version numbers for backups
+    ;; 	  delete-old-versions t
+    ;; 	  kept-new-versions 6
+    ;; 	  kept-old-versions 2)
 
     ;; Pair parentheses and quotes automatically
     (electric-pair-mode 1)
@@ -182,9 +174,47 @@ to DEFAULT-VALUE."
 	    (ligature-re (cdr char/ligature-re)))
 	(set-char-table-range composition-function-table char
 			      `([,ligature-re 0 font-shape-gstring])))))
+
+(use-package no-littering)
 #+END_SRC
 
-idea: can we add a nice startup screen?
+* EMACS Dashboard
+
+#+BEGIN_SRC emacs-lisp
+(use-package dashboard
+  :ensure t
+  :config
+  (setq dashboard-banner-logo-title "Welcome to Emacs, Neptune!")
+
+  ;; 2) Choose a banner:
+  ;; 'official  displays the official Emacs logo
+  ;; 'logo      displays an alternative Emacs logo
+  ;; an integer (1..N) displays built-in text banners
+  ;; a string  for your own custom image or text file (e.g. "/path/to/my-banner.png")
+  (setq dashboard-startup-banner 2)
+
+  ;; 3) Make content centered
+  (setq dashboard-center-content t)
+
+  ;; 4) Hide the letter shortcuts on each section header
+  (setq dashboard-show-shortcuts nil)
+
+  ;; 5) Which sections to show: recents, bookmarks, projects, agenda, registers
+  ;; You can remove or add entries here. The number is how many items show.
+  (setq dashboard-items '((recents   . 5)
+			  (bookmarks . 5)
+                          (projects  . 5)))
+
+  ;; nerd-icons
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+
+  (setq dashboard-modify-heading-icons '((recents   . "nf-oct-file_text")
+					 (projects . "nf-oct-book")))
+
+  ;; Enable the dashboard
+  (dashboard-setup-startup-hook))
+#+END_SRC
 
 * Dired
 
@@ -197,14 +227,74 @@ idea: can we add a nice startup screen?
   :hook ((dired-mode . dired-hide-details-mode)
          (dired-mode . all-the-icons-dired-mode))
   :config
-  (setq dired-listing-switches "-1"))
+  ;; Enable dired-find-alternate-file so we can reuse the same buffer
+  (put 'dired-find-alternate-file 'disabled nil)
 
+  ;; Reuse the same buffer when going "down" into directories
+  (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file)
+
+  ;; Reuse the same buffer when going "up" with ^
+  (defun my/dired-up-alternate-directory ()
+    "Go up one directory in the same buffer."
+    (interactive)
+    (let* ((dir (dired-current-directory))
+           (up  (file-name-directory (directory-file-name dir))))
+      (unless up
+        (error "No parent directory"))
+      (find-alternate-file up)
+      ;; Optionally highlight the subdir you came from
+      (dired-goto-file dir)))
+  (define-key dired-mode-map (kbd "^") 'my/dired-up-alternate-directory)
+
+  ;; Use -al for directory listing
+  (setq dired-listing-switches "-al")
+
+  ;; Built-in Dired-X features
+  (require 'dired-x)
+  (setq dired-omit-files (concat dired-omit-files "\\|^\\..+$")) ;; Hide dotfiles, etc.
+  (add-hook 'dired-mode-hook
+            (lambda ()
+              (dired-omit-mode 1))))
+
+;; Expand/collapse directories inline
 (use-package dired-subtree
   :after dired)
 
+;; Icons for each file type in Dired
 (use-package all-the-icons-dired
   :after dired)
+
+;; Color-code files by extension / type
+(use-package dired-rainbow
+  :after dired
+  :config
+  ;; Example color definitions (adjust as desired)
+  (dired-rainbow-define text "#4e9a06" ("txt" "org" "md" "markdown" "rst"))
+  (dired-rainbow-define doc  "#3465a4" ("pdf" "doc" "docx" "odt")))
+
+;; Dynamic filtering of files in Dired
+(use-package dired-filter
+  :after dired)
+
+;; Narrowing like Ivy/Swiper but for Dired
+(use-package dired-narrow
+  :after dired)
+
+;; Collapse single-directory paths in Dired
+(use-package dired-collapse
+  :after dired)
+
+;; Show directory sizes (disk usage) in Dired
+(use-package dired-du
+  :after dired)
+
+;; Quick previews of files (images, pdfs, etc.) in another window
+(use-package peep-dired
+  :after dired
+  :bind (:map dired-mode-map
+         ("P" . peep-dired)))
 #+END_SRC
+
 
 * Pomodoro
 
@@ -253,6 +343,31 @@ idea: can we add a nice startup screen?
 #+BEGIN_SRC emacs-lisp
 (use-package deadgrep
   :commands (deadgrep))
+
+(require 'transient)
+
+(use-package casual-suite
+  :ensure t
+  :config
+  ;; Per-mode bindings
+  (keymap-set calc-mode-map "C-o" #'casual-calc-tmenu)
+  (keymap-set dired-mode-map "C-o" #'casual-dired-tmenu)
+  (keymap-set ibuffer-mode-map "C-o" #'casual-ibuffer-tmenu)
+  (keymap-set ibuffer-mode-map "F"   #'casual-ibuffer-filter-tmenu)
+  (keymap-set ibuffer-mode-map "s"   #'casual-ibuffer-sortby-tmenu)
+  (keymap-set Info-mode-map "C-o"    #'casual-info-tmenu))
+
+(use-package which-key)
+
+(use-package avy
+  :ensure t
+  :bind ((:map global-map
+               ("C-j" . avy-goto-char-timer))
+         (:map org-mode-map
+               ("C-j" . avy-goto-char-timer)))
+  :config
+  (setq avy-timeout-seconds 0.2)
+  (setq avy-all-windows 'all-frames))
 
 (use-package recentf
   :ensure nil
@@ -575,7 +690,7 @@ idea: can we add a nice startup screen?
   :commands lsp-ui-mode
   :hook (lsp-mode . lsp-ui-mode))
 
-;; debugger 
+;; debugger
 (use-package dape)
 #+END_SRC
 
